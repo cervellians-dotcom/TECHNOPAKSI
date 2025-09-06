@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FoodFlow — Buang Sampah Hari Ini</title>
+  <meta name="description" content="Website responsif yang diadaptasi dari desain PDF pengguna, memakai palet warna yang sama." />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+    .action-btn.primary {
+      background: #F9DD29;
+      color: #49260A;
+    }
+    .action-btn.secondary {
+      background: #eee;
+      color: #49260A;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h3 {
+      margin: 0;
+    }
+    .close-btn {
+      border: 0;
+      background: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #666;
+    }
+    .drag-area {
+      border: 2px dashed #ddd;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .drag-area.active {
+      border-color: #F9DD29;
+      background: rgba(249, 221, 41, 0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #49260A;
+    }
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main id="beranda" class="container">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="h1">
+      <div class="hero-card">
+        <div>
+          <h1 id="h1" data-i18n="hero.title">Mari buang sampah hari ini!</h1>
+          <p data-i18n="hero.desc">Sudahkah kamu membuang sampah hari ini? Kelola sampah makananmu dan kumpulkan poin dari mitra restoran di sekitar.</p>
+          <div class="stats" role="group" aria-label="Statistik ringkas">
+            <div class="stat">
+              <div class="num" id="userPoints">0</div>
+              <div class="label" data-i18n="stats.points">Poin Terkumpul</div>
+            </div>
+            <div class="stat">
+              <div class="num">10.934</div>
+              <div class="label" data-i18n="stats.users">Pengguna Aktif</div>
+            </div>
+            <div class="stat">
+              <div class="num">9.560</div>
+              <div class="label" data-i18n="stats.transactions">Transaksi</div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button onclick="startScanner()" class="action-btn primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM10 4h4M10 20h4M4 10v4M20 10v4"/>
+              </svg>
+              Scan QR Code
+            </button>
+            <button onclick="startUpload()" class="action-btn secondary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload Bukti
+            </button>
+          </div>
+        </div>
+        <div class="address">
+          <div class="addr-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <strong data-i18n="hero.addressTitle">Alamat Utama</strong>
+            <p data-i18n="hero.address">Jl. Semangat Terus No.9, RT.9/RW.9, Pd. Bambu, Jakarta Timur, DKI Jakarta 11111</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- QR Scanner Modal -->
+    <div id="scannerModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Scan QR Code</h3>
+          <button onclick="stopScanner()" class="close-btn">✕</button>
+        </div>
+        <div id="qr-reader" style="width:100%"></div>
+        <div id="qr-reader-results"></div>
+      </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Upload Bukti</h3>
+          <button onclick="stopUpload()" class="close-btn">✕</button>
+        </div>
+        <div class="drag-area" id="dragArea">
+          <p>Drag & drop gambar di sini atau</p>
+          <input type="file" id="fileInput" accept="image/*" style="display: none">
+          <button onclick="document.getElementById('fileInput').click()" class="action-btn primary">Pilih File</button>
+        </div>
+        <form id="uploadForm" onsubmit="handleUpload(event)">
+          <div class="form-group">
+            <label for="description">Deskripsi</label>
+            <textarea id="description" rows="3" required placeholder="Jelaskan bukti yang Anda upload..."></textarea>
+          </div>
+          <button type="submit" class="action-btn primary">Upload & Dapatkan 10 Poin</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- REKOMENDASI TOKO -->
+    <section id="toko" class="section" aria-labelledby="recTitle">
+      <h2 id="recTitle" data-i18n="store.title">Rekomendasi <a href="toko.html" style="font-weight:700; color:var(--c-rust)" data-i18n="store.more">Lihat Semua ›</a></h2>
+      <div class="grid cards" id="storeList">
+        <!-- Stores will be loaded here -->
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div id="footer"></div>
+  </main>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/qr.js"></script>
+  <script src="assets/js/features.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Check authentication first
+        if (!requireAuth('/login.html')) {
+          throw new Error('Authentication required');
+        }
+
+        // Load shell components
+        await loadShell();
+        
+        // Update points display
+        document.getElementById('userPoints').textContent = getUserPoints();
+        
+        // Load stores
+        await loadStores();
+      } catch (error) {
+        console.error('Initialization error:', error);
+      }
+    });
+
+    // Load stores from API
+    async function loadStores() {
+      try {
+        const locations = await apiCall(config.api.locations);
+        const storeList = document.getElementById('storeList');
+        storeList.innerHTML = locations.slice(0, 4).map(store => `
+          <article class="card">
+            <div class="title">${store.name}</div>
+            <div class="meta">${store.address}</div>
+          </article>
+        `).join('') || '<p>Belum ada toko tersedia.</p>';
+      } catch (err) {
+        console.error('Error loading stores:', err);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Voucher - FoodFlow Admin</title>
+    <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .admin-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .admin-nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        .admin-nav a {
+            color: #49260A;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .admin-nav a:hover {
+            background-color: #F9DD29;
+        }
+        .admin-nav a.active {
+            background-color: #F9DD29;
+            font-weight: bold;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .vouchers-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .voucher-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #49260A;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #F9DD29;
+            color: #49260A;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .vouchers-list {
+            margin-top: 20px;
+        }
+        .voucher-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .voucher-item:last-child {
+            border-bottom: none;
+        }
+        .voucher-code {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .voucher-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .qr-preview {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #ddd;
+            border-radius: 8px;
+        }
+        .qr-preview img {
+            max-width: 200px;
+            height: auto;
+        }
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #F9DD29;
+            border-color: #F9DD29;
+            color: #49260A;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Kelola Voucher</h1>
+            <button onclick="appLogout()" class="btn btn-danger">Logout</button>
+        </div>
+
+        <nav class="admin-nav">
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="locations.html">Kelola Lokasi</a></li>
+                <li><a href="vouchers.html" class="active">Kelola Voucher</a></li>
+                
+            </ul>
+        </nav>
+
+        <div class="content-grid">
+            <div class="vouchers-container">
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterVouchers('all')">Semua</button>
+                    <button class="filter-btn" onclick="filterVouchers('unused')">Belum Digunakan</button>
+                    <button class="filter-btn" onclick="filterVouchers('used')">Sudah Digunakan</button>
+                </div>
+
+                <div class="vouchers-list" id="vouchersList">
+                    <!-- Vouchers will be listed here -->
+                </div>
+            </div>
+
+            <div class="voucher-form">
+                <h2>Generate Voucher</h2>
+                <form id="voucherForm" onsubmit="handleSubmit(event)">
+                    <div class="form-group">
+                        <label for="brand">Brand/Merchant</label>
+                        <input type="text" id="brand" required placeholder="Nama brand atau merchant">
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Jenis Voucher</label>
+                        <select id="type" required>
+                            <option value="points">Points</option>
+                            <option value="discount">Discount</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="value">Nilai</label>
+                        <input type="number" id="value" min="1" required>
+                        <small style="color:#666;display:block;margin-top:4px">
+                            Points: masukkan jumlah poin
+                            Discount: masukkan persentase (1-100)
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Jumlah Voucher</label>
+                        <input type="number" id="quantity" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiry">Tanggal Kadaluarsa (opsional)</label>
+                        <input type="datetime-local" id="expiry">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate Voucher</button>
+                </form>
+
+                <div id="qrPreview" class="qr-preview" style="display:none">
+                    <h3>Preview QR Code</h3>
+                    <div id="qrImage"></div>
+                    <button onclick="downloadQR()" class="btn btn-primary" style="margin-top:10px">Download QR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Check if user is admin
+        if (!requireAdmin()) {
+            location.href = '../index.html';
+        }
+
+        let currentFilter = 'all';
+        let qrCode = null;
+
+        // Load vouchers
+        async function loadVouchers() {
+            try {
+                const vouchers = await apiCall(config.api.vouchers);
+                const vouchersList = document.getElementById('vouchersList');
+                
+                // Filter vouchers
+                const filteredVouchers = vouchers.filter(v => {
+                    if (currentFilter === 'used') return v.used;
+                    if (currentFilter === 'unused') return !v.used;
+                    return true;
+                });
+
+                vouchersList.innerHTML = filteredVouchers.map(v => `
+                    <div class="voucher-item">
+                        <div>
+                            <div class="voucher-code">${v.code}</div>
+                            <div class="voucher-details">
+                                <strong>${v.brand}</strong><br>
+                                ${v.type === 'points' ? v.value + ' Points' : v.value + '% Discount'}<br>
+                                <small>Created: ${new Date(v.created_at).toLocaleDateString()}</small>
+                                ${v.expiry ? `<br><small>Expires: ${new Date(v.expiry).toLocaleDateString()}</small>` : ''}
+                                ${v.used ? `<br><small>Used by: ${v.used_by || 'Unknown'}</small>` : ''}
+                            </div>
+                        </div>
+                        <span class="badge ${getBadgeClass(v)}">
+                            ${getVoucherStatus(v)}
+                        </span>
+                        <div>
+                            <button onclick="showQR('${v.code}')" class="btn btn-primary" style="margin-bottom:5px">QR</button>
+                            ${!v.used ? `<button onclick="deleteVoucher(${v.id})" class="btn btn-danger">Hapus</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading vouchers:', err);
+                alert('Gagal memuat data voucher');
+            }
+        }
+
+        // Filter vouchers
+        function filterVouchers(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(filter));
+            });
+            loadVouchers();
+        }
+
+        // Show QR code
+        function showQR(code) {
+            const qrPreview = document.getElementById('qrPreview');
+            const qrImage = document.getElementById('qrImage');
+            qrImage.innerHTML = '';
+            
+            qrCode = new QRCode(qrImage, {
+                text: code,
+                width: 200,
+                height: 200
+            });
+            
+            qrPreview.style.display = 'block';
+        }
+
+        // Download QR code
+        function downloadQR() {
+            if (!qrCode) return;
+            
+            const canvas = document.querySelector('#qrImage canvas');
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = 'qr-code.png';
+            link.click();
+        }
+
+        // Helper function to get badge class
+        function getBadgeClass(voucher) {
+            if (voucher.used) return 'badge-danger';
+            if (voucher.expiry && new Date(voucher.expiry) < new Date()) return 'badge-warning';
+            return 'badge-success';
+        }
+
+        // Helper function to get voucher status
+        function getVoucherStatus(voucher) {
+            if (voucher.used) return 'Used';
+            if (voucher.expiry && new Date(voucher.expiry) < new Date()) return 'Expired';
+            return 'Active';
+        }
+
+        // Handle form submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const formData = {
+                brand: document.getElementById('brand').value,
+                type: document.getElementById('type').value,
+                value: parseInt(document.getElementById('value').value),
+                quantity: parseInt(document.getElementById('quantity').value),
+                expiry: document.getElementById('expiry').value || null
+            };
+
+            // Validate value based on type
+            if (formData.type === 'discount' && (formData.value < 1 || formData.value > 100)) {
+                alert('Nilai diskon harus antara 1-100');
+                return;
+            }
+
+            try {
+                const result = await apiCall(config.api.vouchers, {
+                    method: 'POST',
+                    body: formData  // Remove JSON.stringify here since apiCall handles it
+                });
+                
+                // Reset form
+                e.target.reset();
+                
+                // Reload vouchers
+                loadVouchers();
+                
+                // Show first voucher QR code if single voucher
+                if (formData.quantity === 1 && result.codes && result.codes[0]) {
+                    showQR(result.codes[0]);
+                }
+                
+                alert('Voucher berhasil dibuat');
+            } catch (err) {
+                console.error('Error generating vouchers:', err);
+                alert(err.message || 'Gagal membuat voucher');
+            }
+        }
+
+        // Delete voucher
+        async function deleteVoucher(id) {
+            if (!confirm('Yakin ingin menghapus voucher ini?')) return;
+
+            try {
+                await apiCall(`${config.api.vouchers}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                // Reload vouchers
+                loadVouchers();
+                
+                alert('Voucher berhasil dihapus');
+            } catch (err) {
+                console.error('Error deleting voucher:', err);
+                alert('Gagal menghapus voucher');
+            }
+        }
+
+        // Load initial data
+        loadVouchers();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<nav class="nav">
+  <div class="container">
+    <a href="/" class="brand">
+      <img src="components/Screenshot 2025-08-16 105950.png" alt="FoodFlow" height="40" width="100">
+    </a>
+    
+    <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div id="navMenu" class="nav-menu">
+      <a href="index.html" class="nav-link" data-i18n="nav.home">Beranda</a>
+      <a href="peta.html" class="nav-link" data-i18n="nav.map">Peta</a>
+      <a href="toko.html" class="nav-link" data-i18n="nav.store">Toko</a>
+      <a href="profil.html" class="nav-link" data-i18n="nav.profile">Profil</a>
+      
+      <select id="langSwitch" class="lang-switch">
+        <option value="id">ID</option>
+        <option value="en">EN</option>
+      </select>
+    </div>
+  </div>
+</nav>
+
+<style>
+.nav {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-link {
+  color: var(--c-rust);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--c-yellow);
+}
+
+.lang-switch {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--c-rust);
+  transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-menu {
+    display: none;
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .nav-open .nav-menu {
+    display: flex;
+  }
+
+  .nav-open .nav-toggle span:first-child {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .nav-open .nav-toggle span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .nav-open .nav-toggle span:last-child {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+}
+</style>
+

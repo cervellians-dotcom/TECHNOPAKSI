@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Lokasi - FoodFlow Admin</title>
+    <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .admin-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .admin-nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        .admin-nav a {
+            color: #49260A;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .admin-nav a:hover {
+            background-color: #F9DD29;
+        }
+        .admin-nav a.active {
+            background-color: #F9DD29;
+            font-weight: bold;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .map-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #map {
+            height: 500px;
+            border-radius: 8px;
+        }
+        .location-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #49260A;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #F9DD29;
+            color: #49260A;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .locations-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .location-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .location-item:last-child {
+            border-bottom: none;
+        }
+        .coordinates-display {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 0.9em;
+            font-family: monospace;
+        }
+        .search-box {
+            margin-bottom: 10px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Kelola Lokasi</h1>
+            <button onclick="appLogout()" class="btn btn-danger">Logout</button>
+        </div>
+
+        <nav class="admin-nav">
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="locations.html" class="active">Kelola Lokasi</a></li>
+                <li><a href="vouchers.html">Kelola Voucher</a></li>
+                
+            </ul>
+        </nav>
+
+        <div class="content-grid">
+            <div class="map-container">
+                <div class="search-box">
+                    <input type="text" id="searchAddress" placeholder="Cari lokasi..." onkeypress="searchLocation(event)">
+                </div>
+                <div id="map"></div>
+                <div id="coordinates" class="coordinates-display"></div>
+                <div class="locations-list" id="locationsList"></div>
+            </div>
+
+            <div class="location-form">
+                <h2>Tambah Lokasi</h2>
+                <form id="locationForm" onsubmit="handleSubmit(event)">
+                    <div class="form-group">
+                        <label for="name">Nama Toko</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Alamat</label>
+                        <textarea id="address" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="lat">Latitude</label>
+                        <input type="text" id="lat"  required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lng">Longitude</label>
+                        <input type="text" id="lng" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan Lokasi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        // Check if user is admin
+        if (!requireAdmin()) {
+            location.href = '../index.html';
+        }
+
+        // Initialize map centered on Indonesia
+        const map = L.map('map').setView([-6.2088, 106.8456], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let markers = [];
+        let tempMarker = null;
+
+        // Update coordinates display
+        function updateCoordinates(lat, lng) {
+            document.getElementById('coordinates').textContent = 
+                `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        }
+
+        // Handle map click
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            // Update form
+            document.getElementById('lat').value = lat.toFixed(6);
+            document.getElementById('lng').value = lng.toFixed(6);
+            
+            // Update coordinates display
+            updateCoordinates(lat, lng);
+
+            // Update temporary marker
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+            }
+            tempMarker = L.marker([lat, lng], {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41]
+                })
+            }).addTo(map);
+        });
+
+        // Search location using Nominatim
+        async function searchLocation(event) {
+            if (event.key === 'Enter') {
+                const query = document.getElementById('searchAddress').value;
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data && data.length > 0) {
+                        const location = data[0];
+                        const lat = parseFloat(location.lat);
+                        const lng = parseFloat(location.lon);
+                        
+                        map.setView([lat, lng], 16);
+                        
+                        // Update form and marker
+                        document.getElementById('lat').value = lat.toFixed(6);
+                        document.getElementById('lng').value = lng.toFixed(6);
+                        document.getElementById('address').value = location.display_name;
+                        
+                        if (tempMarker) {
+                            map.removeLayer(tempMarker);
+                        }
+                        tempMarker = L.marker([lat, lng], {
+                            icon: L.icon({
+                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41]
+                            })
+                        }).addTo(map);
+                        
+                        updateCoordinates(lat, lng);
+                    }
+                } catch (err) {
+                    console.error('Error searching location:', err);
+                    alert('Gagal mencari lokasi');
+                }
+            }
+        }
+
+        // Load locations
+        async function loadLocations() {
+            try {
+                const locations = await apiCall(config.api.locations);
+                
+                // Clear existing markers
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+
+                // Update locations list
+                const locationsList = document.getElementById('locationsList');
+                locationsList.innerHTML = locations.map(loc => `
+                    <div class="location-item">
+                        <div>
+                            <strong>${loc.name}</strong><br>
+                            <small>${loc.address}</small><br>
+                            <small>Lat: ${loc.lat}, Lng: ${loc.lng}</small>
+                        </div>
+                        <div class="button-group">
+                            <button onclick="editLocation(${loc.id})" class="btn btn-primary">Edit</button>
+                            <button onclick="deleteLocation(${loc.id})" class="btn btn-danger">Hapus</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add markers
+                locations.forEach(loc => {
+                    const marker = L.marker([loc.lat, loc.lng])
+                        .bindPopup(`<b>${loc.name}</b><br>${loc.address}`)
+                        .addTo(map);
+                    markers.push(marker);
+                });
+            } catch (err) {
+                console.error('Error loading locations:', err);
+                alert('Gagal memuat data lokasi');
+            }
+        }
+
+        // Handle form submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const formData = {
+                name: document.getElementById('name').value,
+                address: document.getElementById('address').value,
+                lat: parseFloat(document.getElementById('lat').value),
+                lng: parseFloat(document.getElementById('lng').value)
+            };
+
+            try {
+                await apiCall(config.api.locations, {
+                    method: 'POST',
+                    body: formData  // Remove JSON.stringify here since apiCall handles it
+                });
+                
+                // Reset form and temporary marker
+                e.target.reset();
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+                
+                // Reload locations
+                loadLocations();
+                
+                alert('Lokasi berhasil ditambahkan');
+            } catch (err) {
+                console.error('Error adding location:', err);
+                alert('Gagal menambahkan lokasi');
+            }
+        }
+
+        // Delete location
+        async function deleteLocation(id) {
+            if (!confirm('Yakin ingin menghapus lokasi ini?')) return;
+
+            try {
+                await apiCall(`${config.api.locations}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                // Reload locations
+                loadLocations();
+                
+                alert('Lokasi berhasil dihapus');
+            } catch (err) {
+                console.error('Error deleting location:', err);
+                alert('Gagal menghapus lokasi');
+            }
+        }
+
+        // Load initial data
+        loadLocations();
+
+        // Update coordinates on mouse move
+        map.on('mousemove', function(e) {
+            updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+    </script>
+</body>
+</html> 

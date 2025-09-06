@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login — FoodFlow</title>
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .login-stack{width:100%;max-width:420px;position:relative}
+    .login-card{width:100%;background:rgba(255,255,255,0.96);padding:22px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+    .login-card h2{margin:0 0 12px;font-size:1.25rem}
+    .form-group{margin-bottom:12px}
+    input[type="text"],input[type="password"]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+    .btn-primary{display:inline-block;padding:10px 14px;border-radius:10px;background:#F9DD29;color:#49260A;border:0;font-weight:700;cursor:pointer}
+    .muted{color:#6b5b4f;font-size:.95rem;margin-top:8px}
+    .logo-frame {
+      width:96px;
+      height:96px;
+      border-radius:50%;
+      margin:0 auto;
+      transform: translateY(-48px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(135deg,#F9DD29,#E6B48B);
+      box-shadow: 0 10px 30px rgba(16,24,40,0.12);
+      border: 4px solid rgba(255,255,255,0.92);
+      z-index:5;
+    }
+    .logo-frame img {
+      width:76px;
+      height:76px;
+      border-radius:50%;
+      object-fit:cover;
+      display:block;
+    }
+    .login-card { padding-top: 56px; }
+    @media (max-width:420px) {
+      .logo-frame { width:80px; height:80px; transform: translateY(-40px); }
+      .logo-frame img { width:60px; height:60px; }
+      .login-card { padding-top:48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-stack">
+      <div class="logo-frame" aria-hidden="true">
+        <img src="components/Screenshot 2025-08-16 105950.png" alt="FoodFlow logo" />
+      </div>
+
+      <div class="login-card" role="main" aria-labelledby="loginTitle">
+        <h2 id="loginTitle">Masuk ke FoodFlow</h2>
+
+        <form id="loginForm" autocomplete="off" aria-describedby="loginHelp">
+          <div class="form-group">
+            <label for="username">Nama pengguna</label>
+            <input id="username" name="username" type="text" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Kata sandi</label>
+            <input id="password" name="password" type="password" required />
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center">
+            <button type="submit" class="btn-primary">Masuk</button>
+            <a href="register.html" style="color:#49260A">Daftar Akun</a>
+          </div>
+
+          <div id="loginHelp" class="muted">Masuk untuk mengakses fitur situs.</div>
+          <div id="loginError" style="color:#c0392b;margin-top:10px;display:none"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    // Check for registration success message
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('registered') === '1') {
+      const err = document.getElementById('loginError');
+      err.style.display = 'block';
+      err.style.color = '#2ecc71';
+      err.textContent = 'Registrasi berhasil! Silakan masuk.';
+    }
+
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const err = document.getElementById('loginError');
+      
+      try {
+        const ok = await appLogin(username, password);
+        if (ok) {
+          // Success - redirect to dashboard
+          location.href = 'index.html';
+        } else {
+          err.style.display = 'block';
+          err.style.color = '#c0392b';
+          err.textContent = 'Nama pengguna atau kata sandi salah.';
+        }
+      } catch (error) {
+        err.style.display = 'block';
+        err.style.color = '#c0392b';
+        err.textContent = 'Terjadi kesalahan. Silakan coba lagi.';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FoodFlow — Rekomendasi Toko</title>
+  <meta name="description" content="Halaman yang menampilkan daftar toko rekomendasi untuk pengguna." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .search-container {
+      margin-bottom: 20px;
+    }
+    .search-box {
+      width: 100%;
+      max-width: 500px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .store-filters {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .filter-btn:hover {
+      background: #f5f5f5;
+    }
+    .filter-btn.active {
+      background: #F9DD29;
+      border-color: #F9DD29;
+      color: #49260A;
+    }
+    .store-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .store-card:hover {
+      transform: translateY(-2px);
+    }
+    .store-card .title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .store-card .meta {
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .store-card .coordinates {
+      font-size: 0.9em;
+      color: #999;
+    }
+    .store-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: #F9DD29;
+      color: #49260A;
+    }
+    .btn-outline {
+      border: 1px solid #F9DD29;
+      color: #49260A;
+    }
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main class="container">
+    <section class="section" aria-labelledby="storeTitle">
+      <h2 id="storeTitle" data-i18n="store.title">Rekomendasi Toko</h2>
+      
+      <div class="search-container">
+        <input type="text" 
+               id="searchInput" 
+               class="search-box" 
+               placeholder="Cari nama toko atau alamat..."
+               oninput="filterStores()">
+      </div>
+
+      <div class="store-filters" id="storeFilters">
+        <button class="filter-btn active" onclick="setFilter('all')">Semua</button>
+        <button class="filter-btn" onclick="setFilter('jakarta')">Jakarta</button>
+        <button class="filter-btn" onclick="setFilter('bandung')">Bandung</button>
+        <button class="filter-btn" onclick="setFilter('bogor')">Bogor</button>
+      </div>
+
+      <div class="grid cards" id="storeList">
+        <!-- Stores will be listed here -->
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <div id="footer"></div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    let allStores = [];
+    let currentFilter = 'all';
+
+    // Load locations
+    async function loadLocations() {
+      try {
+        const locations = await apiCall(config.api.locations);
+        allStores = locations;
+        filterStores();
+      } catch (err) {
+        console.error('Error loading locations:', err);
+        alert('Gagal memuat data lokasi');
+      }
+    }
+
+    // Filter stores based on search and city filter
+    function filterStores() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const storeList = document.getElementById('storeList');
+      
+      let filteredStores = allStores;
+
+      // Apply city filter
+      if (currentFilter !== 'all') {
+        filteredStores = filteredStores.filter(store => 
+          store.address.toLowerCase().includes(currentFilter)
+        );
+      }
+
+      // Apply search filter
+      if (searchTerm) {
+        filteredStores = filteredStores.filter(store => 
+          store.name.toLowerCase().includes(searchTerm) ||
+          store.address.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Update display
+      if (filteredStores.length === 0) {
+        storeList.innerHTML = `
+          <div class="no-results">
+            <h3>Tidak ada toko ditemukan</h3>
+            <p>Coba ubah filter atau kata kunci pencarian</p>
+          </div>
+        `;
+      } else {
+        storeList.innerHTML = filteredStores.map(store => `
+          <article class="store-card">
+            <div class="title">${store.name}</div>
+            <div class="meta">${store.address}</div>
+            <div class="coordinates">Lat: ${store.lat}, Lng: ${store.lng}</div>
+            <div class="store-actions">
+              <a href="peta.html?lat=${store.lat}&lng=${store.lng}" class="btn btn-primary">Lihat di Peta</a>
+              <button onclick="getDirections(${store.lat}, ${store.lng})" class="btn btn-outline">Petunjuk Arah</button>
+            </div>
+          </article>
+        `).join('');
+      }
+    }
+
+    // Set active filter
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(filter));
+      });
+      filterStores();
+    }
+
+    // Get directions using Google Maps
+    function getDirections(lat, lng) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    }
+
+    // Load shell and data
+    async function loadShell() {
+      document.getElementById('navbar').innerHTML = await (await fetch('components/navbar.html')).text();
+      document.getElementById('footer').innerHTML = await (await fetch('components/footer.html')).text();
+      if (typeof initNav === 'function') initNav();
+      if (typeof setLanguage === 'function') setLanguage(localStorage.getItem('lang')||'id');
+      
+      // Load locations after shell is loaded
+      loadLocations();
+    }
+    document.addEventListener('DOMContentLoaded', loadShell);
+  </script>
+</body>
+</html>
