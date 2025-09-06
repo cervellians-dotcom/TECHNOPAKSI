@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Upload - FoodFlow Admin</title>
+    <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .admin-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .admin-nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        .admin-nav a {
+            color: #49260A;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .admin-nav a:hover {
+            background-color: #F9DD29;
+        }
+        .admin-nav a.active {
+            background-color: #F9DD29;
+            font-weight: bold;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .uploads-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #49260A;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #F9DD29;
+            color: #49260A;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .uploads-list {
+            margin-top: 20px;
+        }
+        .upload-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .upload-item:last-child {
+            border-bottom: none;
+        }
+        .upload-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .upload-details {
+            font-size: 0.9em;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .drag-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .drag-area.active {
+            border-color: #F9DD29;
+            background: rgba(249, 221, 41, 0.1);
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Kelola Upload</h1>
+            <button onclick="appLogout()" class="btn btn-danger">Logout</button>
+        </div>
+
+        <nav class="admin-nav">
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="locations.html">Kelola Lokasi</a></li>
+                <li><a href="vouchers.html">Kelola Voucher</a></li>
+                <li><a href="uploads.html" class="active">Kelola Upload</a></li>
+            </ul>
+        </nav>
+
+        <div class="content-grid">
+            <div class="uploads-container">
+                <h2>Daftar Upload</h2>
+                <div class="uploads-list" id="uploadsList">
+                    <!-- Uploads will be listed here -->
+                </div>
+            </div>
+
+            <div class="upload-form">
+                <h2>Upload Gambar</h2>
+                <div class="drag-area" id="dragArea">
+                    <p>Drag & drop gambar di sini atau</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none">
+                    <button onclick="document.getElementById('fileInput').click()" class="btn btn-primary">Pilih File</button>
+                </div>
+                <form id="uploadForm" onsubmit="handleSubmit(event)">
+                    <div class="form-group">
+                        <label for="description">Deskripsi</label>
+                        <textarea id="description" rows="3" required class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload & Dapatkan 10 Poin</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        // Check if user is admin
+        if (!requireAdmin()) {
+            location.href = '../index.html';
+        }
+
+        const dragArea = document.getElementById('dragArea');
+        const fileInput = document.getElementById('fileInput');
+        let selectedFile = null;
+
+        // Handle drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dragArea.classList.add('active');
+        }
+
+        function unhighlight(e) {
+            dragArea.classList.remove('active');
+        }
+
+        dragArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                selectedFile = files[0];
+                dragArea.innerHTML = `
+                    <p>File selected: ${selectedFile.name}</p>
+                    <button onclick="document.getElementById('fileInput').click()" class="btn btn-primary">Change File</button>
+                `;
+            }
+        }
+
+        // Handle form submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            if (!selectedFile) {
+                alert('Please select an image file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('description', document.getElementById('description').value);
+
+            try {
+                const result = await apiCall(config.api.uploads, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {} // Let the browser set the correct Content-Type for FormData
+                });
+                
+                // Reset form
+                e.target.reset();
+                selectedFile = null;
+                dragArea.innerHTML = `
+                    <p>Drag & drop gambar di sini atau</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none">
+                    <button onclick="document.getElementById('fileInput').click()" class="btn btn-primary">Pilih File</button>
+                `;
+                
+                // Reload uploads
+                loadUploads();
+                
+                alert('Upload berhasil! Anda mendapatkan 10 poin');
+            } catch (err) {
+                console.error('Error uploading image:', err);
+                alert(err.message || 'Gagal mengupload gambar');
+            }
+        }
+
+        // Load uploads
+        async function loadUploads() {
+            try {
+                const uploads = await apiCall(config.api.uploads);
+                const uploadsList = document.getElementById('uploadsList');
+                
+                uploadsList.innerHTML = uploads.map(upload => `
+                    <div class="upload-item">
+                        <img src="${upload.image_url}" alt="Upload preview" class="upload-preview">
+                        <div class="upload-details">
+                            <div>${upload.description}</div>
+                            <small>Uploaded by: ${upload.username}</small><br>
+                            <small>Date: ${new Date(upload.created_at).toLocaleDateString()}</small>
+                        </div>
+                        <div class="button-group">
+                            <button onclick="approveUpload(${upload.id})" class="btn btn-success" ${upload.approved ? 'disabled' : ''}>
+                                ${upload.approved ? 'Approved' : 'Approve'}
+                            </button>
+                            <button onclick="deleteUpload(${upload.id})" class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                `).join('') || '<p>No uploads yet</p>';
+            } catch (err) {
+                console.error('Error loading uploads:', err);
+                alert('Gagal memuat data upload');
+            }
+        }
+
+        // Approve upload
+        async function approveUpload(id) {
+            try {
+                await apiCall(`${config.api.uploads}/${id}/approve`, {
+                    method: 'POST'
+                });
+                
+                // Reload uploads
+                loadUploads();
+                
+                alert('Upload approved successfully');
+            } catch (err) {
+                console.error('Error approving upload:', err);
+                alert('Gagal menyetujui upload');
+            }
+        }
+
+        // Delete upload
+        async function deleteUpload(id) {
+            if (!confirm('Are you sure you want to delete this upload?')) return;
+
+            try {
+                await apiCall(`${config.api.uploads}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                // Reload uploads
+                loadUploads();
+                
+                alert('Upload deleted successfully');
+            } catch (err) {
+                console.error('Error deleting upload:', err);
+                alert('Gagal menghapus upload');
+            }
+        }
+
+        // Load initial data
+        loadUploads();
+    </script>
+</body>
+</html> 

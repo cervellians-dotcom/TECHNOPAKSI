@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Peta Toko - FoodFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .map-container {
+      height: 500px;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    .store-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .store-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .store-card:hover {
+      transform: translateY(-2px);
+    }
+    .store-card .title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .store-card .meta {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .store-card .coordinates {
+      font-size: 0.8em;
+      color: #999;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main class="container">
+    <section class="section" aria-labelledby="mapTitle">
+      <h2 id="mapTitle" data-i18n="map.title">Peta Toko</h2>
+      <div class="map-container">
+        <div id="map"></div>
+      </div>
+      <div class="store-list" id="storeList">
+        <!-- Stores will be listed here -->
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <div id="footer"></div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([-6.2088, 106.8456], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = [];
+    let activeInfoWindow = null;
+
+    // Load locations
+    async function loadLocations() {
+      try {
+        const locations = await apiCall(config.api.locations);
+        const storeList = document.getElementById('storeList');
+        
+        // Clear existing markers
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        // Add markers and store cards
+        storeList.innerHTML = locations.map(store => {
+          // Add marker
+          const marker = L.marker([store.lat, store.lng])
+            .bindPopup(`
+              <strong>${store.name}</strong><br>
+              ${store.address}
+            `)
+            .addTo(map);
+          
+          markers.push(marker);
+
+          // Return store card HTML
+          return `
+            <div class="store-card" onclick="focusLocation(${store.lat}, ${store.lng}, '${store.name}')">
+              <div class="title">${store.name}</div>
+              <div class="meta">${store.address}</div>
+              <div class="coordinates">Lat: ${store.lat}, Lng: ${store.lng}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Fit map bounds to show all markers
+        if (markers.length > 0) {
+          const group = new L.featureGroup(markers);
+          map.fitBounds(group.getBounds().pad(0.1));
+        }
+      } catch (err) {
+        console.error('Error loading locations:', err);
+        alert('Gagal memuat data lokasi');
+      }
+    }
+
+    // Focus on specific location
+    function focusLocation(lat, lng, name) {
+      map.setView([lat, lng], 16);
+      markers.forEach(marker => {
+        const markerLatLng = marker.getLatLng();
+        if (markerLatLng.lat === lat && markerLatLng.lng === lng) {
+          marker.openPopup();
+        }
+      });
+    }
+
+    // Load shell and data
+    async function loadShell() {
+      document.getElementById('navbar').innerHTML = await (await fetch('components/navbar.html')).text();
+      document.getElementById('footer').innerHTML = await (await fetch('components/footer.html')).text();
+      if (typeof initNav === 'function') initNav();
+      if (typeof setLanguage === 'function') setLanguage(localStorage.getItem('lang')||'id');
+      
+      // Load locations after shell is loaded
+      loadLocations();
+    }
+    document.addEventListener('DOMContentLoaded', loadShell);
+  </script>
+</body>
+</html>
