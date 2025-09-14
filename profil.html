@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profil - FoodFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .profile-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px;
+      gap: 18px;
+      background: var(--card, #fff);
+      border-radius: 18px;
+      box-shadow: var(--shadow, 0 10px 30px rgba(0,0,0,.08));
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .avatar-upload {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      margin-bottom: 10px;
+    }
+    .avatar-upload img {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--c-yellow, #F9DD29);
+      background: #eee;
+    }
+    .avatar-upload input[type="file"] {
+      display: none;
+    }
+    .avatar-upload label {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: var(--c-orange, #D28345);
+      color: #fff;
+      border-radius: 50%;
+      padding: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      box-shadow: 0 2px 8px #0002;
+    }
+    .form-group {
+      width: 100%;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px 0;
+      background: var(--c-yellow, #F9DD29);
+      color: #49260A;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn:disabled {
+      background: #eee;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .save-feedback {
+      margin-top: 10px;
+      font-weight: 600;
+      color: var(--c-rust, #A14E20);
+      text-align: center;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main class="container">
+    <section class="section" aria-labelledby="profileTitle">
+      <h2 id="profileTitle" data-i18n="profile.title">Profil Pengguna</h2>
+      <div class="profile-card card">
+        <form id="profileForm" autocomplete="off">
+          <div class="avatar-upload">
+            <img id="avatarPreview" src="assets/img/default-avatar.png" alt="Avatar" />
+            <input type="file" id="avatarInput" accept="image/*" />
+            <label for="avatarInput" title="Ganti foto profil">📷</label>
+          </div>
+          <div class="form-group">
+            <label for="username" data-i18n="profile.username">Nama Pengguna</label>
+            <input type="text" id="username" name="username" required placeholder="Nama kamu..." />
+          </div>
+          <div class="form-group">
+            <label for="email" data-i18n="profile.email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="email@contoh.com" />
+          </div>
+          <div class="form-group">
+            <label for="points" data-i18n="profile.points">Poin Terkumpul</label>
+            <input type="number" id="points" name="points" value="0" readonly />
+          </div>
+          <button type="submit" class="btn" id="saveBtn" data-i18n="profile.save">Simpan Perubahan</button>
+          <div class="save-feedback" id="saveFeedback"></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <div id="footer"></div>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    // load shell (navbar + footer) then apply saved language
+    const savedLang = localStorage.getItem('lang') || 'id';
+    async function loadShell() {
+      const navResp = await fetch('components/navbar.html');
+      const navHtml = await navResp.text();
+      document.getElementById('navbar').innerHTML = navHtml;
+
+      const footResp = await fetch('components/footer.html');
+      const footHtml = await footResp.text();
+      document.getElementById('footer').innerHTML = footHtml;
+
+      // ensure lang switch exists then set language
+      setTimeout(() => setLanguage(savedLang), 8);
+    }
+    document.addEventListener('DOMContentLoaded', loadShell);
+
+    // Avatar preview
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    avatarInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          avatarPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Profile form UX
+    const profileForm = document.getElementById('profileForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveFeedback = document.getElementById('saveFeedback');
+    profileForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      saveFeedback.textContent = "⏳ Menyimpan...";
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveFeedback.textContent = "✅ Perubahan profil berhasil disimpan!";
+      }, 1200);
+    });
+  </script>
+</body>
+</html>

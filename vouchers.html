@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher - FoodFlow</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <style>
+        /* Ensure proper spacing for navbar */
+        body {
+            margin: 0;
+            padding-top: 0;
+        }
+        
+        .main-content {
+            margin-top: 0;
+        }
+        
+        /* Navbar styles */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        /* Ensure navbar loads properly */
+        #navbar {
+            min-height: 72px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar will be loaded here -->
+    <div id="navbar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section" style="background: linear-gradient(135deg, var(--c-yellow) 0%, var(--c-peach) 100%); padding: 60px 0; text-align: center;">
+            <div class="container">
+                <h1 style="color: var(--c-brown); margin-bottom: 16px; font-size: 2.5rem;">🎫 Voucher Restoran</h1>
+                <p style="color: var(--c-brown); font-size: 1.2rem; margin-bottom: 32px;">Tukar poin Anda dengan voucher diskon dari restoran partner</p>
+                
+                <!-- Points Display -->
+                <div class="points-card" style="background: rgba(255,255,255,0.9); border-radius: 16px; padding: 24px; margin: 0 auto 32px; max-width: 300px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                        <div style="font-size: 2rem;">⭐</div>
+                        <div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--c-rust);" id="userPointsDisplay">0</div>
+                            <div style="color: var(--c-brown); font-size: 0.9rem;">Poin Tersedia</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Available Vouchers -->
+        <section class="vouchers-section" style="padding: 60px 0; background: var(--bg);">
+            <div class="container">
+                <h2 style="text-align: center; margin-bottom: 40px; color: var(--c-brown);">Voucher Tersedia</h2>
+                
+                <!-- Filter and Search -->
+                <div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <input type="text" id="searchInput" placeholder="🔍 Cari restoran..." 
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;"
+                                   onkeyup="filterVouchers()">
+                        </div>
+                        <div style="min-width: 150px;">
+                            <select id="categoryFilter" onchange="filterVouchers()" 
+                                    style="width: 100%; padding: 12px 16px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+                                <option value="">Semua Kategori</option>
+                                <option value="Fast Food">Fast Food</option>
+                                <option value="Pizza">Pizza</option>
+                                <option value="Coffee">Coffee</option>
+                                <option value="Sandwich">Sandwich</option>
+                                <option value="Dessert">Dessert</option>
+                                <option value="Noodles">Noodles</option>
+                                <option value="Japanese">Japanese</option>
+                            </select>
+                        </div>
+                        <div style="min-width: 120px;">
+                            <select id="pointsFilter" onchange="filterVouchers()" 
+                                    style="width: 100%; padding: 12px 16px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+                                <option value="">Semua Harga</option>
+                                <option value="0-100">0-100 poin</option>
+                                <option value="100-200">100-200 poin</option>
+                                <option value="200+">200+ poin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            Menampilkan <span id="voucherCount">0</span> voucher
+                        </div>
+                        <button onclick="clearFilters()" style="background: var(--c-peach); color: var(--c-brown); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            🔄 Reset Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="vouchers-grid" id="vouchersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 40px;">
+                    <!-- Vouchers will be loaded here -->
+                </div>
+
+                <!-- No vouchers message -->
+                <div id="noVouchers" style="text-align: center; padding: 40px; color: var(--muted); display: none;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🎫</div>
+                    <h3>Tidak ada voucher tersedia</h3>
+                    <p>Silakan coba lagi nanti atau hubungi admin untuk menambahkan voucher baru.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Vouchers -->
+        <section class="my-vouchers-section" style="padding: 60px 0; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="container">
+                <h2 style="text-align: center; margin-bottom: 40px; color: var(--c-brown);">Voucher Saya</h2>
+                
+                <div class="my-vouchers-grid" id="myVouchersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                    <!-- User's vouchers will be loaded here -->
+                </div>
+
+                <!-- No my vouchers message -->
+                <div id="noMyVouchers" style="text-align: center; padding: 40px; color: var(--muted);">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">📱</div>
+                    <h3>Belum ada voucher</h3>
+                    <p>Pilih voucher di atas dan tukar dengan poin Anda!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer will be loaded here -->
+    <div id="footer"></div>
+
+    <!-- Redeem Modal -->
+    <div id="redeemModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Tukar Voucher</h3>
+                <button onclick="closeRedeemModal()" class="close-btn">✕</button>
+            </div>
+            <div id="redeemContent">
+                <!-- Redeem content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/i18n.js"></script>
+    <script src="assets/js/main.js"></script>
+    
+    <script>
+        // Voucher data will be loaded from API
+        let availableVouchers = [];
+
+        let userPoints = 100; // Default dummy points
+        let myVouchers = JSON.parse(localStorage.getItem('myVouchers') || '[]');
+        let filteredVouchers = [...availableVouchers];
+
+        // Load page
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadShell();
+                await loadUserPoints();
+                await loadVouchersFromAPI();
+                await loadMyVouchers();
+                
+                // Update navbar points after everything loads
+                setTimeout(() => {
+                    updateNavbarPoints(userPoints);
+                }, 100);
+            } catch (error) {
+                console.error('Error loading page:', error);
+                // Add fallback navbar if loading fails
+                addFallbackNavbar();
+            }
+        });
+        
+        function addFallbackNavbar() {
+            const navbar = document.getElementById('navbar');
+            if (navbar && !navbar.innerHTML.trim()) {
+                navbar.innerHTML = `
+                    <nav class="nav">
+                        <div class="container">
+                            <a href="index.html" class="brand">
+                                <img src="components/Screenshot 2025-08-16 105950.png" alt="FoodFlow" height="40" width="100">
+                            </a>
+                            <div class="nav-menu">
+                                <a href="index.html" class="nav-link">Beranda</a>
+                                <a href="peta.html" class="nav-link">Peta</a>
+                                <a href="toko.html" class="nav-link">Toko</a>
+                                <a href="vouchers.html" class="nav-link">Voucher</a>
+                                <a href="profil.html" class="nav-link">Profil</a>
+                                <div class="points-display">
+                                    <div class="points-icon">⭐</div>
+                                    <div class="points-info">
+                                        <div class="points-value" id="navbarPoints">100</div>
+                                        <div class="points-label">Poin</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+            }
+        }
+
+        async function loadUserPoints() {
+            try {
+                const user = await apiCall(config.api.profile);
+                userPoints = user.points;
+                document.getElementById('userPointsDisplay').textContent = userPoints;
+                updateNavbarPoints();
+            } catch (err) {
+                console.error('Error loading user points:', err);
+                userPoints = 100; // Default dummy points
+                document.getElementById('userPointsDisplay').textContent = userPoints;
+                updateNavbarPoints();
+            }
+        }
+
+        async function loadVouchersFromAPI() {
+            try {
+                const vouchers = await apiCall(config.api.availableVouchers);
+                // Convert API vouchers to the format expected by the frontend
+                availableVouchers = vouchers.map(v => ({
+                    id: v.id,
+                    brand: v.brand,
+                    type: v.type,
+                    value: v.value,
+                    pointsRequired: v.type === 'points' ? v.value : Math.floor(v.value * 5), // Convert discount % to points
+                    description: `${v.type === 'points' ? v.value + ' poin bonus' : 'Diskon ' + v.value + '%'} dari ${v.brand}`,
+                    expiry: v.expiry || '2024-12-31',
+                    image: getVoucherImage(v.brand),
+                    category: getVoucherCategory(v.brand),
+                    validAt: "Semua outlet " + v.brand + " Indonesia",
+                    code: v.code
+                }));
+                
+                filteredVouchers = [...availableVouchers];
+                loadAvailableVouchers();
+            } catch (err) {
+                console.error('Error loading vouchers from API:', err);
+                // Fallback to empty array
+                availableVouchers = [];
+                filteredVouchers = [];
+                loadAvailableVouchers();
+            }
+        }
+
+        function getVoucherImage(brand) {
+            const images = {
+                "McDonald's": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop&crop=center",
+                "KFC": "https://images.unsplash.com/photo-1562967914-608f82629710?w=300&h=200&fit=crop&crop=center",
+                "Pizza Hut": "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop&crop=center",
+                "Starbucks": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&h=200&fit=crop&crop=center",
+                "Subway": "https://images.unsplash.com/photo-1565299585323-38174c4a4b0c?w=300&h=200&fit=crop&crop=center",
+                "Domino's": "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=300&h=200&fit=crop&crop=center",
+                "J.CO": "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=300&h=200&fit=crop&crop=center",
+                "A&W": "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=300&h=200&fit=crop&crop=center",
+                "Bakmi GM": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&h=200&fit=crop&crop=center",
+                "Sushi Tei": "https://images.unsplash.com/photo-1579584425555-c3ce17fd1871?w=300&h=200&fit=crop&crop=center",
+                "HokBen": "https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=300&h=200&fit=crop&crop=center",
+                "Kopi Kenangan": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&h=200&fit=crop&crop=center"
+            };
+            return images[brand] || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop&crop=center";
+        }
+
+        function getVoucherCategory(brand) {
+            const categories = {
+                "McDonald's": "Fast Food",
+                "KFC": "Fast Food",
+                "Pizza Hut": "Pizza",
+                "Starbucks": "Coffee",
+                "Subway": "Sandwich",
+                "Domino's": "Pizza",
+                "J.CO": "Dessert",
+                "A&W": "Fast Food",
+                "Bakmi GM": "Noodles",
+                "Sushi Tei": "Japanese",
+                "HokBen": "Japanese",
+                "Kopi Kenangan": "Coffee"
+            };
+            return categories[brand] || "Restaurant";
+        }
+
+        function updateNavbarPoints() {
+            const navbarPoints = document.getElementById('navbarPoints');
+            if (navbarPoints) {
+                navbarPoints.textContent = userPoints;
+            }
+        }
+
+        function loadAvailableVouchers() {
+            const grid = document.getElementById('vouchersGrid');
+            const noVouchers = document.getElementById('noVouchers');
+            
+            if (filteredVouchers.length === 0) {
+                grid.style.display = 'none';
+                noVouchers.style.display = 'block';
+                document.getElementById('voucherCount').textContent = '0';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            noVouchers.style.display = 'none';
+            document.getElementById('voucherCount').textContent = filteredVouchers.length;
+
+            grid.innerHTML = filteredVouchers.map(voucher => `
+                <div class="voucher-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: transform 0.3s ease; position: relative;">
+                    <div style="height: 200px; background: url('${voucher.image}') center/cover; position: relative;">
+                        <div style="position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                            ${voucher.category}
+                        </div>
+                        <div style="position: absolute; top: 12px; right: 12px; background: var(--c-yellow); color: var(--c-brown); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                            ${voucher.value}% OFF
+                        </div>
+                    </div>
+                    <div style="padding: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <h3 style="margin: 0; color: var(--c-brown); font-size: 1.3rem;">${voucher.brand}</h3>
+                        </div>
+                        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.5; font-size: 0.95rem;">${voucher.description}</p>
+                        
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: var(--c-brown); font-size: 1.1rem;">⭐</span>
+                                    <span style="font-weight: 700; color: var(--c-rust); font-size: 1.1rem;">${voucher.pointsRequired} poin</span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--muted);">
+                                    Berlaku hingga ${new Date(voucher.expiry).toLocaleDateString('id-ID')}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--muted);">
+                                📍 ${voucher.validAt}
+                            </div>
+                        </div>
+                        
+                        <button onclick="showRedeemModal(${voucher.id})" 
+                                class="action-btn primary" 
+                                style="width: 100%; padding: 12px; font-weight: 700; font-size: 1rem; border-radius: 8px;"
+                                ${userPoints < voucher.pointsRequired ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                            ${userPoints < voucher.pointsRequired ? '❌ Poin Tidak Cukup' : '🎫 Tukar Sekarang'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add hover effects
+            document.querySelectorAll('.voucher-card').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-4px)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0)';
+                });
+            });
+        }
+
+        function loadMyVouchers() {
+            const grid = document.getElementById('myVouchersGrid');
+            const noMyVouchers = document.getElementById('noMyVouchers');
+            
+            if (myVouchers.length === 0) {
+                grid.style.display = 'none';
+                noMyVouchers.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = myVouchers.map(voucher => `
+                <div class="my-voucher-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 2px solid var(--c-yellow);">
+                    <div style="padding: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <h3 style="margin: 0; color: var(--c-brown);">${voucher.brand}</h3>
+                            <div style="background: var(--c-rust); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem;">
+                                ${voucher.type === 'discount' ? voucher.value + '% OFF' : voucher.value + ' Poin'}
+                            </div>
+                        </div>
+                        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.5;">${voucher.description}</p>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                            <div style="font-family: monospace; font-size: 1.2rem; font-weight: 700; color: var(--c-brown); text-align: center; letter-spacing: 2px;">
+                                ${voucher.code}
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <small style="color: var(--muted);">Berlaku hingga ${new Date(voucher.expiry).toLocaleDateString('id-ID')}</small>
+                            <button onclick="copyVoucherCode('${voucher.code}')" class="action-btn secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                                Salin Kode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showRedeemModal(voucherId) {
+            const voucher = availableVouchers.find(v => v.id === voucherId);
+            if (!voucher) return;
+
+            const content = document.getElementById('redeemContent');
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🎫</div>
+                    <h3 style="color: var(--c-brown); margin-bottom: 8px;">${voucher.brand}</h3>
+                    <p style="color: var(--muted);">${voucher.description}</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="color: var(--c-brown); font-weight: 700;">Harga:</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: var(--c-brown);">⭐</span>
+                            <span style="font-weight: 700; color: var(--c-rust); font-size: 1.2rem;">${voucher.pointsRequired} poin</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--c-brown); font-weight: 700;">Poin Anda:</span>
+                        <span style="font-weight: 700; color: var(--c-rust);">${userPoints} poin</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="closeRedeemModal()" class="action-btn secondary" style="flex: 1; padding: 12px;">
+                        Batal
+                    </button>
+                    <button onclick="redeemVoucher(${voucherId})" class="action-btn primary" style="flex: 1; padding: 12px; font-weight: 700;">
+                        Konfirmasi Tukar
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('redeemModal').style.display = 'block';
+        }
+
+        function closeRedeemModal() {
+            document.getElementById('redeemModal').style.display = 'none';
+        }
+
+        async function redeemVoucher(voucherId) {
+            const voucher = availableVouchers.find(v => v.id === voucherId);
+            if (!voucher || userPoints < voucher.pointsRequired) {
+                alert('Poin tidak cukup!');
+                return;
+            }
+
+            try {
+                // Redeem voucher using API
+                const result = await apiCall(config.api.redeemVoucher, {
+                    method: 'POST',
+                    body: { code: voucher.code }
+                });
+                
+                // Add to my vouchers
+                const newVoucher = {
+                    ...voucher,
+                    redeemedAt: new Date().toISOString()
+                };
+                
+                myVouchers.push(newVoucher);
+                localStorage.setItem('myVouchers', JSON.stringify(myVouchers));
+                
+                // Update points
+                userPoints = result.total_points || userPoints;
+                document.getElementById('userPointsDisplay').textContent = userPoints;
+                updateNavbarPoints();
+                
+                // Close modal and refresh
+                closeRedeemModal();
+                await loadVouchersFromAPI();
+                loadMyVouchers();
+                
+                alert(`Voucher berhasil ditukar!\nKode: ${voucher.code}`);
+            } catch (err) {
+                console.error('Error redeeming voucher:', err);
+                alert('Gagal menukar voucher: ' + (err.message || 'Terjadi kesalahan'));
+            }
+        }
+
+        function copyVoucherCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Kode voucher berhasil disalin!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = code;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Kode voucher berhasil disalin!');
+            });
+        }
+
+        // Filter functions
+        function filterVouchers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const pointsFilter = document.getElementById('pointsFilter').value;
+            
+            filteredVouchers = availableVouchers.filter(voucher => {
+                // Search filter
+                const matchesSearch = voucher.brand.toLowerCase().includes(searchTerm) || 
+                                    voucher.description.toLowerCase().includes(searchTerm);
+                
+                // Category filter
+                const matchesCategory = !categoryFilter || voucher.category === categoryFilter;
+                
+                // Points filter
+                let matchesPoints = true;
+                if (pointsFilter) {
+                    if (pointsFilter === '0-100') {
+                        matchesPoints = voucher.pointsRequired <= 100;
+                    } else if (pointsFilter === '100-200') {
+                        matchesPoints = voucher.pointsRequired > 100 && voucher.pointsRequired <= 200;
+                    } else if (pointsFilter === '200+') {
+                        matchesPoints = voucher.pointsRequired > 200;
+                    }
+                }
+                
+                return matchesSearch && matchesCategory && matchesPoints;
+            });
+            
+            loadAvailableVouchers();
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('pointsFilter').value = '';
+            filteredVouchers = [...availableVouchers];
+            loadAvailableVouchers();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('redeemModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRedeemModal();
+            }
+        });
+    </script>
+</body>
+</html>

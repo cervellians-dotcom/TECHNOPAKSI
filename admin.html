@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — FoodFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .admin-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+    @media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+    
+    .admin-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .admin-card h2 { margin: 0 0 20px; font-size: 1.5rem; }
+    
+    #map {
+      height: 400px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    
+    .location-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    
+    .location-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .location-item:last-child { border-bottom: none; }
+    
+    .voucher-list {
+      margin: 10px 0;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+    
+    .voucher-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .voucher-item:last-child { border-bottom: none; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .btn-primary { background: #F9DD29; color: #49260A; }
+    .btn-danger { background: #dc3545; color: white; }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main class="admin-container">
+    <h1>Admin Dashboard</h1>
+    
+    <div class="admin-grid">
+      <!-- Location Management -->
+      <div class="admin-card">
+        <h2>Lokasi Toko</h2>
+        <div id="map"></div>
+        
+        <form id="locationForm">
+          <div class="form-group">
+            <label for="locationName">Nama Toko</label>
+            <input type="text" id="locationName" required>
+          </div>
+          <div class="form-group">
+            <label for="locationAddress">Alamat</label>
+            <input type="text" id="locationAddress" required>
+          </div>
+          <div class="form-group">
+            <label>Koordinat</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <input type="number" id="locationLat" placeholder="Latitude" step="any" required>
+              <input type="number" id="locationLng" placeholder="Longitude" step="any" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Tambah Lokasi</button>
+        </form>
+        
+        <div class="location-list" id="locationList">
+          <!-- Locations will be listed here -->
+        </div>
+      </div>
+      
+      <!-- Voucher Management -->
+      <div class="admin-card">
+        <h2>Manajemen Voucher</h2>
+        
+        <form id="voucherForm">
+          <div class="form-group">
+            <label for="voucherType">Jenis Voucher</label>
+            <select id="voucherType" required>
+              <option value="discount">Diskon</option>
+              <option value="points">Poin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="voucherValue">Nilai</label>
+            <input type="number" id="voucherValue" required min="1">
+          </div>
+          <div class="form-group">
+            <label for="voucherQuantity">Jumlah Voucher</label>
+            <input type="number" id="voucherQuantity" required min="1" value="1">
+          </div>
+          <button type="submit" class="btn btn-primary">Generate Voucher</button>
+        </form>
+        
+        <div class="voucher-list" id="voucherList">
+          <!-- Vouchers will be listed here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/js/auth.js"></script>
+  <script>
+    // Check if user is admin
+    if (!requireAdmin()) {
+      location.href = 'index.html';
+    }
+  </script>
+  
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([-6.2088, 106.8456], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    let markers = [];
+    
+    // Load locations from localStorage
+    async function fetchLocations() {
+  return await apiCall(config.api.locations);
+}
+    
+    async function updateLocationsList() {
+      const locations = await fetchLocations();
+      const list = document.getElementById('locationList');
+      list.innerHTML = locations.map(loc => `
+        <div class="location-item">
+          <div>
+            <strong>${loc.name}</strong><br>
+            <small>${loc.address}</small><br>
+            <small>Lat: ${loc.lat}, Lng: ${loc.lng}</small>
+          </div>
+        </div>
+      `).join('');
+
+      markers.forEach(m => map.removeLayer(m));
+      markers = locations.map(loc =>
+        L.marker([loc.lat, loc.lng]).bindPopup(`<b>${loc.name}</b><br>${loc.address}`).addTo(map)
+      );
+    }
+    
+    // Handle location form submission
+    document.getElementById('locationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        name: document.getElementById('locationName').value,
+        address: document.getElementById('locationAddress').value,
+        lat: parseFloat(document.getElementById('locationLat').value),
+        lng: parseFloat(document.getElementById('locationLng').value)
+      };
+      await apiCall(config.api.locations, { method: 'POST', body });
+      e.target.reset();
+      updateLocationsList();
+    });
+    
+    function deleteLocation(id) {
+      const index = locations.findIndex(l => l.id === id);
+      if (index > -1) {
+        locations.splice(index, 1);
+        localStorage.setItem('foodflow_locations', JSON.stringify(locations));
+        updateLocationsList();
+      }
+    }
+    
+    // Initialize locations list
+    updateLocationsList();
+    
+    // Voucher Management
+    const vouchers = JSON.parse(localStorage.getItem('foodflow_vouchers') || '[]');
+    
+    function updateVouchersList() {
+      const list = document.getElementById('voucherList');
+      list.innerHTML = vouchers.map(v => `
+        <div class="voucher-item">
+          <div>
+            <strong>${v.code}</strong><br>
+            ${v.type === 'discount' ? 'Diskon' : 'Poin'}: ${v.value}
+          </div>
+          <div>${v.used ? 'Terpakai' : 'Aktif'}</div>
+          <button class="btn btn-danger" onclick="deleteVoucher('${v.code}')" ${v.used ? 'disabled' : ''}>
+            Hapus
+          </button>
+        </div>
+      `).join('');
+    }
+    
+    // Generate random voucher code
+    function generateVoucherCode() {
+      return 'FF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    
+    // Handle voucher form submission
+    document.getElementById('voucherForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const type = document.getElementById('voucherType').value;
+      const value = parseInt(document.getElementById('voucherValue').value);
+      const quantity = parseInt(document.getElementById('voucherQuantity').value);
+      
+      for (let i = 0; i < quantity; i++) {
+        vouchers.push({
+          code: generateVoucherCode(),
+          type,
+          value,
+          used: false,
+          created: Date.now()
+        });
+      }
+      
+      localStorage.setItem('foodflow_vouchers', JSON.stringify(vouchers));
+      updateVouchersList();
+      e.target.reset();
+    });
+    
+    function deleteVoucher(code) {
+      const index = vouchers.findIndex(v => v.code === code);
+      if (index > -1 && !vouchers[index].used) {
+        vouchers.splice(index, 1);
+        localStorage.setItem('foodflow_vouchers', JSON.stringify(vouchers));
+        updateVouchersList();
+      }
+    }
+    
+    // Initialize vouchers list
+    updateVouchersList();
+  </script>
+  
+  <script src="assets/js/main.js"></script>
+  <script>
+    // load shell
+    async function loadShell() {
+      document.getElementById('navbar').innerHTML = await (await fetch('components/navbar.html')).text();
+      if (typeof initNav === 'function') initNav();
+    }
+    document.addEventListener('DOMContentLoaded', loadShell);
+  </script>
+</body>
+</html> 

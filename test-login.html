@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - FoodFlow</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { padding: 8px; width: 200px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <h1>Test Login & API</h1>
+    
+    <div class="form-group">
+        <label>Username:</label>
+        <input type="text" id="username" value="admin">
+    </div>
+    
+    <div class="form-group">
+        <label>Password:</label>
+        <input type="password" id="password" value="admin123">
+    </div>
+    
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testAPI()">Test API</button>
+    <button onclick="testAddLocation()">Test Add Location</button>
+    
+    <div id="result" class="result"></div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        function log(message) {
+            const result = document.getElementById('result');
+            result.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            log('Testing login with: ' + username);
+            
+            try {
+                const success = await appLogin(username, password);
+                if (success) {
+                    log('✅ Login successful!');
+                    log('Current user: ' + JSON.stringify(currentUser()));
+                    log('Token: ' + localStorage.getItem('token'));
+                } else {
+                    log('❌ Login failed');
+                }
+            } catch (err) {
+                log('❌ Login error: ' + err.message);
+            }
+        }
+
+        async function testAPI() {
+            log('Testing API connection...');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/test');
+                const data = await response.json();
+                log('✅ API test successful: ' + JSON.stringify(data));
+            } catch (err) {
+                log('❌ API test failed: ' + err.message);
+            }
+        }
+
+        async function testAddLocation() {
+            log('Testing add location...');
+            
+            const testLocation = {
+                name: 'Test Store',
+                address: 'Test Address, Jakarta',
+                lat: -6.2088,
+                lng: 106.8456
+            };
+            
+            try {
+                const result = await apiCall(config.api.locations, {
+                    method: 'POST',
+                    body: testLocation
+                });
+                log('✅ Add location successful: ' + JSON.stringify(result));
+            } catch (err) {
+                log('❌ Add location failed: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

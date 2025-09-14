@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FoodFlow — Buang Sampah Hari Ini</title>
+  <meta name="description" content="Website responsif yang diadaptasi dari desain PDF pengguna, memakai palet warna yang sama." />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+    .action-btn.primary {
+      background: #F9DD29;
+      color: #49260A;
+    }
+    .action-btn.secondary {
+      background: #007bff;
+      color: white;
+      border: 1px solid #007bff;
+    }
+    .action-btn.secondary:hover {
+      background: #0056b3;
+      border-color: #0056b3;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      max-width: 90vw;
+      max-height: 90vh;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h3 {
+      margin: 0;
+    }
+    .close-btn {
+      border: 0;
+      background: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #666;
+    }
+    .drag-area {
+      border: 2px dashed #ddd;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .drag-area.active {
+      border-color: #F9DD29;
+      background: rgba(249, 221, 41, 0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #49260A;
+    }
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <main id="beranda" class="container">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="h1">
+      <div class="hero-card">
+        <div>
+          <h1 id="h1" data-i18n="hero.title">Mari buang sampah hari ini!</h1>
+          <p data-i18n="hero.desc">Sudahkah kamu membuang sampah hari ini? Kelola sampah makananmu dan kumpulkan poin dari mitra restoran di sekitar.</p>
+          <div class="stats" role="group" aria-label="Statistik ringkas">
+            <div class="stat">
+              <div class="num" id="userPoints">100</div>
+              <div class="label" data-i18n="stats.points">Poin Terkumpul</div>
+            </div>
+            <div class="stat">
+              <div class="num">10.934</div>
+              <div class="label" data-i18n="stats.users">Pengguna Aktif</div>
+            </div>
+            <div class="stat">
+              <div class="num">9.560</div>
+              <div class="label" data-i18n="stats.transactions">Transaksi</div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button onclick="startUpload()" class="action-btn primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload Bukti
+            </button>
+          </div>
+        </div>
+        <div class="address">
+          <div class="addr-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <strong data-i18n="hero.addressTitle">Alamat Utama</strong>
+            <p data-i18n="hero.address">Jl. Semangat Terus No.9, RT.9/RW.9, Pd. Bambu, Jakarta Timur, DKI Jakarta 11111</p>
+            <!-- Methane Sensor Status (inside the same white box) -->
+            <div id="methaneSection" class="methane" aria-live="polite" style="margin-top:14px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#49260A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V8a6 6 0 1 1 12 0v13"/></svg>
+                  <strong data-i18n="methane.title">Deteksi Gas Metana</strong>
+                </div>
+                <span id="methaneStatusBadge" style="background:#eee;color:#49260A;padding:4px 10px;border-radius:999px;font-size:.85rem">Memuat...</span>
+              </div>
+              <div style="margin-top:8px;color:#6b4a2f;font-size:.95rem">
+                Kadar: <span id="methanePpm">-</span> ppm · Terakhir: <span id="methaneUpdated">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Upload Bukti</h3>
+          <button onclick="stopUpload()" class="close-btn">✕</button>
+        </div>
+        <div class="drag-area" id="dragArea">
+          <p>Drag & drop gambar di sini atau</p>
+          <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+            <input type="file" id="fileInput" accept="image/*" style="display: none">
+            <button onclick="document.getElementById('fileInput').click()" class="action-btn primary">📁 Pilih File</button>
+            <button onclick="openCamera()" class="action-btn secondary">📷 Ambil Foto</button>
+          </div>
+        </div>
+        <form id="uploadForm" onsubmit="handleUpload(event)">
+          <button type="submit" class="action-btn primary">Upload & Dapatkan Poin</button>
+        </form>
+        
+        <!-- ML Detection Results -->
+        <div id="detectionResults" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff; max-height: 60vh; overflow-y: auto;">
+          <h4 style="margin: 0 0 10px 0; color: #007bff;">🔍 Hasil Deteksi ML</h4>
+          <div id="detectionSummary" style="font-weight: bold; margin-bottom: 10px;"></div>
+          <div id="detectionCounts" style="margin-bottom: 10px;"></div>
+          <div id="detectionImages" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <div id="originalImage" style="flex: 1; min-width: 200px; max-width: 100%;"></div>
+            <div id="annotatedImage" style="flex: 1; min-width: 200px; max-width: 100%;"></div>
+          </div>
+          <div id="detectionError" style="color: #dc3545; font-weight: bold;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REKOMENDASI TOKO -->
+    <section id="toko" class="section" aria-labelledby="recTitle">
+      <h2 id="recTitle" data-i18n="store.title">Rekomendasi <a href="toko.html" style="font-weight:700; color:var(--c-rust)" data-i18n="store.more">Lihat Semua ›</a></h2>
+      <div class="grid cards" id="storeList">
+        <!-- Stores will be loaded here -->
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section" aria-labelledby="faqTitle" style="margin-top:32px">
+      <h2 id="faqTitle" data-i18n="faq.title">Pertanyaan yang Sering Diajukan</h2>
+      <div class="faq-list" style="display:grid;gap:12px">                                                                      
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q1">Apa itu FoodFlow?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a1">FoodFlow adalah tempat sampah pintar bertenaga AI yang dirancang untuk bisnis kuliner. Alat ini mendeteksi sampah makanan, memprosesnya melalui beberapa wadah, dan mengubahnya menjadi biogas yang dapat digunakan untuk gas portabel dan listrik.</div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q2">Siapa yang dapat merasakan manfaat dari penggunaan FoodFlow?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a2">FoodFlow sangat cocok untuk restoran, hotel, layanan katering, supermarket, dan pusat jajanan — bisnis apa pun yang menghasilkan limbah makanan secara rutin dan ingin mengurangi biaya, menekan jumlah sampah, serta bergerak menuju keberlanjutan.</div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q3">Apa saja manfaat menggunakan FoodFlow?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a3">
+            - Mengurangi volume limbah makanan.
+
+            - Menurunkan biaya pembuangan sampah.
+
+            - Menghasilkan biogas bersih dan terbarukan untuk memasak dan listrik.
+
+            - Menjaga dapur tetap bersih dan efisien.
+          </div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q4">Bagaimana FoodFlow membantu lingkungan?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a4">Dengan mengubah limbah menjadi energi, FoodFlow mengurangi kontribusi ke tempat pembuangan akhir, menekan emisi metana, dan mendorong terciptanya ekonomi sirkular.</div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q5">Bagaimana cara mendapatkan poin?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a5">Anda bisa scan QR atau upload bukti pembuangan sampah makanan.</div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q6">Apakah data lokasi saya disimpan?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a6">Lokasi hanya digunakan untuk menampilkan peta dan tidak disimpan di server.</div>
+        </details>
+        <details class="faq-item" style="background:#fff;border-radius:10px;padding:14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--c-brown)" data-i18n="faq.q7">Apa arti status metana?</summary>
+          <div style="margin-top:8px;color:#6b4a2f" data-i18n="faq.a7">Aman: normal, Waspada: sedang meningkat, Bahaya: melebihi ambang batas.</div>
+        </details>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div id="footer"></div>
+  </main>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/features.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Check authentication first
+        if (!requireAuth('/login.html')) {
+          throw new Error('Authentication required');
+        }
+
+        // Load shell components
+        await loadShell();
+        
+        // Update points display
+        document.getElementById('userPoints').textContent = getUserPoints();
+        
+        // Load stores
+        await loadStores();
+      } catch (error) {
+        console.error('Initialization error:', error);
+      }
+    });
+
+    // Load stores from API
+    async function loadStores() {
+      try {
+        const locations = await apiCall(config.api.locations);
+        const storeList = document.getElementById('storeList');
+        storeList.innerHTML = locations.slice(0, 4).map(store => `
+          <article class="card">
+            <div class="title">${store.name}</div>
+            <div class="meta">${store.address}</div>
+          </article>
+        `).join('') || '<p>Belum ada toko tersedia.</p>';
+      } catch (err) {
+        console.error('Error loading stores:', err);
+      }
+    }
+  </script>
+</body>
+</html>
